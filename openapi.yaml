@@ -1,0 +1,157 @@
+openapi: 3.0.2
+
+servers:
+  - url: https://0.0.0.0:8000/
+    description: Main repository service
+  - url: https://0.0.0.0:8001/
+    description: Thumbnail transformation service
+  - url: https://0.0.0.0:8002/
+    description: Rotation transformation service
+
+info:
+  description: Stores, retrieves and transforms images.
+  version: 1.0.0
+  title: ProgImage.com
+
+paths:
+  /images/:
+    post:
+      summary: Upload an image. The raw image contents should be posted in the request body.
+      tags: [ 'repository' ]
+      responses:
+        201:
+          description: Uploaded image has been stored and its URL returned in the Location header.
+          content:
+            application/json:
+              example:
+                id: 0707cb4e-a994-425d-987d-ca103595ad10.jpg
+                location: http://0.0.0.0:8000/images/0707cb4e-a994-425d-987d-ca103595ad10.jpg
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  location:
+                    type: string
+        400:
+          $ref: '#/components/responses/BadRequest'
+  /images/{imageId}:
+    get:
+      summary: Retrieve image based on its unique ID.
+      description:  Retrieves the image in its original format, but by changing the file extension the image can be converted to any other popular image format.
+      tags: [ 'repository' ]
+      parameters:
+        - in: path
+          name: imageId
+          description: Image unique ID generated when the image was uploaded.
+          required: true
+          schema:
+            type: string
+          example: 0707cb4e-a994-425d-987d-ca103595ad10.jpg
+      responses:
+        200:
+          description: Image contents.
+        404:
+          $ref: '#/components/responses/NotFound'
+  /bulk/:
+    post:
+      summary: Bulk image transformation
+      description: Apply transformations on a list of images from the repository or from URLs.
+      tags: [ 'repository' ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example:
+              0707cb4e-a994-425d-987d-ca103595ad10.jpg:
+                thumbnail-size: 200*200
+                rotate-angle: 90
+              https://www.python.org/static/opengraph-icon-200x200.png:
+                thumbnail-size: 100*100
+      responses:
+        200:
+          description: Transformation completed. The response will contain the transformed images' unique ID, the transformed images will be available under this ID in the repository.
+          content:
+            application/json:
+              example:
+                0707cb4e-a994-425d-987d-ca103595ad10.jpg: 95ab964b-c410-46bd-90c2-a07765b73945.jpg
+                https://www.python.org/static/opengraph-icon-200x200.png: d7e457fc-e4d4-48f6-aaa2-2cc003495b32.png
+        400:
+          $ref: '#/components/responses/BadRequest'
+  /transform/{imageId}:
+    get:
+      summary: Transform an image found in the repository.
+      tags: [ 'transformation' ]
+      parameters:
+        - in: path
+          name: imageId
+          description: Image unique ID generated when the image was uploaded.
+          required: true
+          schema:
+            type: string
+          example: 0707cb4e-a994-425d-987d-ca103595ad10.jpg
+        - in: query
+          name: thumbnail-size
+          description: Create thumbnail of the given size.
+          example: 200*200
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: rotate-angle
+          description: Rotate image by the given angle.
+          example: -90
+          required: false
+          schema:
+            type: integer
+        - in: query
+          name: rotate-transpose
+          description: Transpose image.
+          example: 270
+          required: false
+          schema:
+            type: integer
+            enum:
+              - 90
+              - 180
+              - 270
+      responses:
+        200:
+          description: The response contains the transformed image's binary contents.
+        400:
+          $ref: '#/components/responses/BadRequest'
+        404:
+          $ref: '#/components/responses/NotFound'
+  /transform/:
+    post:
+      description: Transform any binary image data sent in the request body. Alternatively, send text/uri-list data with a sinlge URL to transform the image found at that URL. The transformation depends on which service is it sent to and the additional query parameters.
+      tags: [ 'transformation' ]
+      responses:
+        200:
+          description: The response contains the transformed image's binary contents.
+        400:
+          $ref: '#/components/responses/BadRequest'
+
+components:
+  schemas:
+    error:
+      type: object
+      description: Error details.
+      properties:
+        error:
+          type: string
+      example:
+        error: "Unknown image format"
+  responses:
+    BadRequest:
+      description: Invalid request.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/error'
+    NotFound:
+      description: Requested image was not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/error'

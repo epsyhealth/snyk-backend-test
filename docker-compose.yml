@@ -1,0 +1,70 @@
+version: "3.0"
+services:
+  repository_service:
+    build:
+      context: .
+      dockerfile: ProgImage/repository_service/Dockerfile
+    ports:
+      - 8000:80
+    volumes:
+      - ./:/app
+    environment:
+      - PORT=80
+      - FLASK_ENV=dev
+      - FLASK_DEBUG=0
+      - STORAGE=s3
+      - S3_BUCKET=matepager-progimage
+      - AWS_DEFAULT_REGION
+      - AWS_REGION
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_SESSION_TOKEN
+      - AWS_SECURITY_TOKEN
+      - THUMBNAIL_TRANSFORMATION_URL=http://thumbnail_service:80/
+      - ROTATE_TRANSFORMATION_URL=http://rotation_service:80/
+    command: gunicorn --reload --bind 0.0.0.0:80 ProgImage.repository_service.server:app
+    links:
+      - thumbnail_service
+      - rotation_service
+  thumbnail_service:
+    build:
+      context: .
+      dockerfile: ProgImage/thumbnail_service/Dockerfile
+    ports:
+      - 8001:80
+    volumes:
+      - ./:/app
+    environment:
+      - PORT=80
+      - FLASK_ENV=dev
+      - FLASK_DEBUG=0
+      - STORAGE=s3
+      - S3_BUCKET=matepager-progimage
+      - AWS_DEFAULT_REGION
+      - AWS_REGION
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_SESSION_TOKEN
+      - AWS_SECURITY_TOKEN
+    command: gunicorn --reload --bind 0.0.0.0:80 ProgImage.thumbnail_service.server:app
+  rotation_service:
+    build:
+      context: .
+      dockerfile: ProgImage/rotation_service/Dockerfile
+    ports:
+      - 8002:80
+    volumes:
+      - ./:/app
+    environment:
+      - PORT=80
+      - FLASK_ENV=dev
+      - FLASK_DEBUG=0
+      - STORAGE=s3
+      - S3_BUCKET=matepager-progimage
+      - AWS_DEFAULT_REGION
+      - AWS_REGION
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_SESSION_TOKEN
+      - AWS_SECURITY_TOKEN
+    command: gunicorn --reload --bind 0.0.0.0:80 ProgImage.rotation_service.server:app

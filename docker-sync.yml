@@ -1,0 +1,11 @@
+version: "2"
+options:
+  verbose: true
+syncs:
+  api-code-sync:
+    src: './'
+    sync_host_ip: 'auto'
+    sync_host_port: 10872
+    sync_excludes: ['.git', '.idea']
+    watch_excludes: ['.*/.git', '.idea']
+sync_strategy: 'rsync'
