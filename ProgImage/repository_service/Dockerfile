@@ -1,4 +1,4 @@
-FROM python:3.8-slim
+FROM python:3.14.0a1-slim
 
 RUN pip install poetry==1.1.4
 RUN poetry config virtualenvs.create false
